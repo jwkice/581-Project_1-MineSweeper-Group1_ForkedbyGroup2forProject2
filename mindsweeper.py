@@ -1,4 +1,4 @@
-import pygame
+import pygame 
 import random
 
 pygame.init()
@@ -35,22 +35,49 @@ def main():
     for r, c in bombs:
         grid[r][c] = -1
 
-    # AI generated bombs
+
     print(f"💣 Bombs placed: {len(bombs)} / {bomb_count}  ✅  Grid: {board_rows}x{board_columns} 🧩")
+
+    revealed = set()  # NEW: track revealed cells as (row, col) pairs
 
     running = True
     while running:
         screen.fill((255, 255, 255))  # white background
 
-        # Draw the grid
-        for row in range(board_rows):
-            for col in range(board_columns):
-                rect = pygame.Rect(col * cell_size, row * cell_size, cell_size, cell_size)
-                pygame.draw.rect(screen, (0, 0, 0), rect, 1)  # black border
-
+        # --- INPUT (mouse clicks) ---
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            #left-click reveals a single cell
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mx, my = pygame.mouse.get_pos()
+                col = mx // cell_size
+                row = my // cell_size
+                # ensure inside grid
+                if 0 <= row < board_rows and 0 <= col < board_columns:
+                    revealed.add((row, col))
+
+        # --- DRAW GRID + REVEALS ---
+        for row in range(board_rows):
+            for col in range(board_columns):
+                x = col * cell_size
+                y = row * cell_size
+                rect = pygame.Rect(x, y, cell_size, cell_size)
+
+                if (row, col) in revealed:
+                    if grid[row][col] == -1:
+                        # bomb cell revealed: light red + small black circle
+                        pygame.draw.rect(screen, (255, 180, 180), rect)
+                        pygame.draw.circle(screen, (0, 0, 0), rect.center, cell_size // 6)
+                    else:
+                        # safe cell revealed: light gray
+                        pygame.draw.rect(screen, (220, 220, 220), rect)
+                else:
+                    # hidden cell: white (already from fill)
+                    pass
+
+                # cell border
+                pygame.draw.rect(screen, (0, 0, 0), rect, 1)
 
         pygame.display.flip()
 
