@@ -1,11 +1,13 @@
 import pygame 
 import random
+import time
 
 pygame.init()
 
 NUM_BOMBS: int = 30
 BOARD_WIDTH: int = 500
-BOARD_HEIGHT: int = 500
+BOARD_HEIGHT: int = 600  # Increased height for title and timer
+UI_HEIGHT: int = 100  # Space for title and timer
 
 def generate_bombs(rows: int, cols: int, bomb_count: int) -> set[tuple[int, int]]:
     """
@@ -102,6 +104,53 @@ def generate_numbers(grid):
                             bomb_count += 1
                 grid[i][j] = bomb_count
 
+def draw_game_over_popup(screen, width, height, game_won=False):
+    """Draw a game over popup with play again and quit buttons"""
+    # Semi-transparent overlay
+    overlay = pygame.Surface((width, height))
+    overlay.set_alpha(128)
+    overlay.fill((0, 0, 0))
+    screen.blit(overlay, (0, 0))
+    
+    # Popup background
+    popup_width = 300
+    popup_height = 200
+    popup_x = (width - popup_width) // 2
+    popup_y = (height - popup_height) // 2
+    
+    popup_rect = pygame.Rect(popup_x, popup_y, popup_width, popup_height)
+    pygame.draw.rect(screen, (255, 255, 255), popup_rect)
+    pygame.draw.rect(screen, (0, 0, 0), popup_rect, 3)
+    
+    # Title
+    title_font = pygame.font.Font(None, 36)
+    title_text = "You Won!" if game_won else "Game Over!"
+    title_color = (0, 128, 0) if game_won else (255, 0, 0)
+    title_surface = title_font.render(title_text, True, title_color)
+    title_rect = title_surface.get_rect(center=(popup_x + popup_width//2, popup_y + 50))
+    screen.blit(title_surface, title_rect)
+    
+    # Buttons
+    button_font = pygame.font.Font(None, 24)
+    
+    # Play Again button
+    play_again_rect = pygame.Rect(popup_x + 20, popup_y + 100, 100, 40)
+    pygame.draw.rect(screen, (0, 200, 0), play_again_rect)
+    pygame.draw.rect(screen, (0, 0, 0), play_again_rect, 2)
+    play_again_text = button_font.render("Play Again", True, (255, 255, 255))
+    play_again_text_rect = play_again_text.get_rect(center=play_again_rect.center)
+    screen.blit(play_again_text, play_again_text_rect)
+    
+    # Quit button
+    quit_rect = pygame.Rect(popup_x + 180, popup_y + 100, 100, 40)
+    pygame.draw.rect(screen, (200, 0, 0), quit_rect)
+    pygame.draw.rect(screen, (0, 0, 0), quit_rect, 2)
+    quit_text = button_font.render("Quit", True, (255, 255, 255))
+    quit_text_rect = quit_text.get_rect(center=quit_rect.center)
+    screen.blit(quit_text, quit_text_rect)
+    
+    return play_again_rect, quit_rect
+
 def main():
     # Grid size
     board_rows = 10
@@ -109,7 +158,7 @@ def main():
     cell_size = BOARD_WIDTH // board_columns
 
     screen = pygame.display.set_mode((BOARD_WIDTH, BOARD_HEIGHT))
-    pygame.display.set_caption("Minesweeper Grid")
+    pygame.display.set_caption("Minesweeper")
 
     # Create a 2D grid
     grid = [[0 for _ in range(board_columns)] for _ in range(board_rows)]
@@ -124,34 +173,102 @@ def main():
     print(f"💣 Bombs placed: {len(bombs)} / {NUM_BOMBS}  ✅  Grid: {board_rows}x{board_columns} 🧩")
 
     revealed = set()  # track revealed cells as (row, col) pairs
+    flagged = set()   # track flagged cells as (row, col) pairs
     first_click = True
     running = True
+    game_over = False
+    game_won = False
+    start_time = time.time()
+    game_started = False
+    
     while running:
         screen.fill((255, 255, 255))  # white background
+        
+        # Draw title
+        title_font = pygame.font.Font(None, 48)
+        title_surface = title_font.render("MINESWEEPER", True, (0, 0, 0))
+        title_rect = title_surface.get_rect(center=(BOARD_WIDTH//2, 30))
+        screen.blit(title_surface, title_rect)
+        
+        # Draw timer
+        if game_started and not game_over:
+            elapsed_time = int(time.time() - start_time)
+            timer_font = pygame.font.Font(None, 24)
+            timer_surface = timer_font.render(f"Time: {elapsed_time}s", True, (0, 0, 0))
+            screen.blit(timer_surface, (10, 60))
+        
+        # Draw bomb count and flag count
+        bomb_font = pygame.font.Font(None, 24)
+        remaining_bombs = NUM_BOMBS - len(flagged)
+        bomb_surface = bomb_font.render(f"Bombs: {remaining_bombs}", True, (0, 0, 0))
+        screen.blit(bomb_surface, (BOARD_WIDTH - 100, 60))
 
         # --- INPUT (mouse clicks) ---
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = pygame.mouse.get_pos()
-                col = mx // cell_size
-                row = my // cell_size
-                if 0 <= row < board_rows and 0 <= col < board_columns:
-                    if first_click:
-                        grid, bombs = ensure_safe_start(grid, row, col, bombs)
-                        first_click = False
-                    if grid[row][col] == -1:
-                        revealed.add((row, col))
-                    else:
-                        new_reveals = flood_fill(grid, row, col)
-                        revealed.update(new_reveals)
+                
+                # Check if clicking on game over popup buttons
+                if game_over:
+                    play_again_rect, quit_rect = draw_game_over_popup(screen, BOARD_WIDTH, BOARD_HEIGHT, game_won)
+                    if play_again_rect.collidepoint(mx, my):
+                        # Reset game
+                        grid = [[0 for _ in range(board_columns)] for _ in range(board_rows)]
+                        bombs = generate_bombs(board_rows, board_columns, NUM_BOMBS)
+                        for r, c in bombs:
+                            grid[r][c] = -1
+                        generate_numbers(grid)
+                        revealed = set()
+                        flagged = set()
+                        first_click = True
+                        game_over = False
+                        game_won = False
+                        game_started = False
+                        continue
+                    elif quit_rect.collidepoint(mx, my):
+                        running = False
+                        continue
+                
+                # Game board clicks (only if not game over)
+                if not game_over and my > UI_HEIGHT:
+                    col = mx // cell_size
+                    row = (my - UI_HEIGHT) // cell_size
+                    if 0 <= row < board_rows and 0 <= col < board_columns:
+                        # Right click for flagging
+                        if event.button == 3:  # Right click
+                            if (row, col) not in revealed:
+                                if (row, col) in flagged:
+                                    flagged.remove((row, col))
+                                else:
+                                    flagged.add((row, col))
+                        # Left click for revealing
+                        elif event.button == 1:  # Left click
+                            if (row, col) not in flagged:  # Can't reveal flagged cells
+                                if first_click:
+                                    grid, bombs = ensure_safe_start(grid, row, col, bombs)
+                                    first_click = False
+                                    game_started = True
+                                    start_time = time.time()
+                                if grid[row][col] == -1:
+                                    revealed.add((row, col))
+                                    game_over = True
+                                else:
+                                    new_reveals = flood_fill(grid, row, col)
+                                    revealed.update(new_reveals)
+                                    
+                                    # Check for win condition
+                                    total_safe_cells = board_rows * board_columns - NUM_BOMBS
+                                    if len(revealed) == total_safe_cells:
+                                        game_won = True
+                                        game_over = True
 
         # --- DRAW GRID + REVEALS ---
         for row in range(board_rows):
             for col in range(board_columns):
                 x = col * cell_size
-                y = row * cell_size
+                y = row * cell_size + UI_HEIGHT  # Offset for UI
                 rect = pygame.Rect(x, y, cell_size, cell_size)
                 if (row, col) in revealed:
                     if grid[row][col] == -1:
@@ -177,8 +294,35 @@ def main():
                             text_surface = font.render(str(number), True, color)
                             text_rect = text_surface.get_rect(center=rect.center)
                             screen.blit(text_surface, text_rect)
+                else:
+                    # Unrevealed cells - draw as covered
+                    pygame.draw.rect(screen, (200, 200, 200), rect)
+                    # Draw flag if cell is flagged
+                    if (row, col) in flagged:
+                        # Draw a simple flag using pygame shapes
+                        flag_size = cell_size // 3
+                        flag_x = rect.centerx - flag_size // 2
+                        flag_y = rect.centery - flag_size // 2
+                        
+                        # Flag pole (vertical line)
+                        pygame.draw.line(screen, (139, 69, 19), 
+                                       (flag_x, flag_y), 
+                                       (flag_x, flag_y + flag_size), 3)
+                        
+                        # Flag (triangle)
+                        flag_points = [
+                            (flag_x, flag_y),
+                            (flag_x + flag_size, flag_y + flag_size // 3),
+                            (flag_x, flag_y + 2 * flag_size // 3)
+                        ]
+                        pygame.draw.polygon(screen, (255, 0, 0), flag_points)
                 # cell border
                 pygame.draw.rect(screen, (0, 0, 0), rect, 1)
+        
+        # Draw game over popup if game is over
+        if game_over:
+            draw_game_over_popup(screen, BOARD_WIDTH, BOARD_HEIGHT, game_won)
+        
         pygame.display.flip()
     pygame.quit()
 
