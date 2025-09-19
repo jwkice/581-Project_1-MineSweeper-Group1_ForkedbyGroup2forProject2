@@ -4,10 +4,10 @@ import time
 
 pygame.init()
 
-NUM_BOMBS: int = 30
+NUM_BOMBS: int = 16
 BOARD_WIDTH: int = 500
-BOARD_HEIGHT: int = 600  # Increased height for title and timer
-UI_HEIGHT: int = 100  # Space for title and timer
+BOARD_HEIGHT: int = 600
+UI_HEIGHT: int = 100 
 
 def generate_bombs(rows: int, cols: int, bomb_count: int) -> set[tuple[int, int]]:
     """
@@ -31,7 +31,7 @@ def ensure_safe_start(grid: list[list[int]], start_row: int, start_col: int, bom
             r, c = start_row + dr, start_col + dc
             if 0 <= r < rows and 0 <= c < cols:
                 protected_area.add((r, c))
-    bombs_to_move = bomb_positions & protected_area
+    bombs_to_move = bomb_positions & protected_area #set union
     if bombs_to_move:
         all_positions = {(r, c) for r in range(rows) for c in range(cols)}
         available_positions = all_positions - bomb_positions - protected_area
@@ -50,11 +50,11 @@ def ensure_safe_start(grid: list[list[int]], start_row: int, start_col: int, bom
 
 def flood_fill(grid: list[list[int]], start_row: int, start_col: int) -> set[tuple[int, int]]:
     """
-    Floodfill that reveals cells with 0 bombs around them, and stops at cells with numbers.
+    Floodfill algorithm that reveals cells with 0 bombs around them, and stops at cells with numbers.
     """
     if not grid or not grid[0]:
         return set()
-    
+    #define helper variables and preallocations
     rows = len(grid)
     cols = len(grid[0])
     if (start_row < 0 or start_row >= rows or 
@@ -66,6 +66,7 @@ def flood_fill(grid: list[list[int]], start_row: int, start_col: int) -> set[tup
     directions = [(-1, -1), (-1, 0), (-1, 1),
                   (0, -1),           (0, 1),
                   (1, -1),  (1, 0),  (1, 1)]
+    # flood
     while to_visit:
         row, col = to_visit.pop()
         if (row < 0 or row >= rows or col < 0 or col >= cols or
@@ -264,7 +265,7 @@ def main():
                                         game_won = True
                                         game_over = True
 
-        # --- DRAW GRID + REVEALS ---
+        #draw board
         for row in range(board_rows):
             for col in range(board_columns):
                 x = col * cell_size
@@ -277,7 +278,7 @@ def main():
                         pygame.draw.circle(screen, (0, 0, 0), center, cell_size // 4)
                     else:
                         # safe cell revealed: light gray
-                        pygame.draw.rect(screen, (210, 210, 210), rect)
+                        pygame.draw.rect(screen, (230, 230, 230), rect)
                         number = grid[row][col]
                         if number > 0:
                             number_colors = {
@@ -318,11 +319,11 @@ def main():
                         pygame.draw.polygon(screen, (255, 0, 0), flag_points)
                 # cell border
                 pygame.draw.rect(screen, (0, 0, 0), rect, 1)
-        
+    
         # Draw game over popup if game is over
         if game_over:
             draw_game_over_popup(screen, BOARD_WIDTH, BOARD_HEIGHT, game_won)
-        
+        #update display
         pygame.display.flip()
     pygame.quit()
 
