@@ -152,6 +152,29 @@ def draw_game_over_popup(screen, width, height, game_won=False):
     
     return play_again_rect, quit_rect
 
+
+def hidden_neighbors(row, col, revealed, flagged, board_rows, board_cols):
+    '''For a given cell (row, col), returns the number of neighboring cells that are not revealed or flagged'''
+    hidden = 0
+    for i in range(-1, 2):
+        if row+i >= 0 and row+i < board_rows:
+            for j in range(-1, 2):
+                if (col+j >= 0 and col+j < board_cols) and (i != 0 or j != 0):
+                    if ((row+i, col+j) not in revealed) and ((row+i, col+j) not in flagged):
+                        hidden += 1
+    return hidden
+
+def flagged_neighbors(row, col, flagged, board_rows, board_cols):
+    '''For a given cell (row, col), returns the number of neighboring cells that are flagged'''
+    num_flagged = 0
+    for i in range(-1, 2):
+        if row+i >= 0 and row+i < board_rows:
+            for j in range(-1, 2):
+                if (col+j >= 0 and col+j < board_cols) and (i != 0 or j != 0):
+                    if (row+i, col+j) in flagged:
+                        num_flagged += 1
+    return num_flagged
+
 def main():
     # Grid size
     board_rows = 10
@@ -182,7 +205,10 @@ def main():
     start_time = time.time()
     game_started = False
     
+    ai_mode = 'medium'
+
     while running:
+
         screen.fill((255, 255, 255))  # white background
         
         # Draw title
@@ -203,6 +229,112 @@ def main():
         remaining_bombs = NUM_BOMBS - len(flagged)
         bomb_surface = bomb_font.render(f"Bombs: {remaining_bombs}", True, (0, 0, 0))
         screen.blit(bomb_surface, (BOARD_WIDTH - 100, 60))
+
+        
+
+        # AI Solver
+        if not game_over:
+            time.sleep(1)
+            if ai_mode == 'easy':
+                row = random.randint(0, board_rows-1)
+                col = random.randint(0, board_columns-1)
+                if (row, col) not in flagged:  # Can't reveal flagged cells
+                    if first_click:
+                        grid, bombs = ensure_safe_start(grid, row, col, bombs)
+                        first_click = False
+                        game_started = True
+                        start_time = time.time()
+                    if grid[row][col] == -1:
+                        revealed.add((row, col))
+                        game_over = True
+                    else:
+                        new_reveals = flood_fill(grid, row, col)
+                        revealed.update(new_reveals)
+                        
+                        # Check for win condition
+                        total_safe_cells = board_rows * board_columns - NUM_BOMBS
+                        if len(revealed) == total_safe_cells:
+                            game_won = True
+                            game_over = True
+            elif ai_mode == 'medium':
+                found = False
+                for row in range(board_rows):
+                    for col in range(board_columns):
+                        if (row, col) in revealed and hidden_neighbors(row, col, revealed, flagged, board_rows, board_columns) != 0:
+                            if grid[row][col] == flagged_neighbors(row, col, flagged, board_rows, board_columns):
+                                #Number of flagged neighbors equal to number of adjacent bombs
+                                found = True
+                                cell_revealed = False
+                                for i in range(-1, 2):
+                                    if row+i >= 0 and row+i < board_rows:
+                                        for j in range(-1, 2):
+                                            if (col+j >= 0 and col+j < board_columns) and (i != 0 or j != 0):
+                                                if ((row+i, col+j) not in revealed) and ((row+i, col+j) not in flagged):
+                                                    #Neighbor cell is hidden, reveal neighbor
+                                                    if grid[row+i][col+j] == -1:
+                                                        revealed.add((row+i, col+j))
+                                                        game_over = True
+                                                        cell_revealed = True
+                                                        break
+                                                    else:
+                                                        new_reveals = flood_fill(grid, row+i, col+j)
+                                                        revealed.update(new_reveals)
+                                                        
+                                                        # Check for win condition
+                                                        total_safe_cells = board_rows * board_columns - NUM_BOMBS
+                                                        if len(revealed) == total_safe_cells:
+                                                            game_won = True
+                                                            game_over = True
+                                                        cell_revealed = True
+                                                        break
+                                        if cell_revealed:
+                                            break
+                            elif grid[row][col] == (hidden_neighbors(row, col, revealed, flagged, board_rows, board_columns) + flagged_neighbors(row, col, flagged, board_rows, board_columns)):
+                                #Number of hidden neighbors equal to number of adjacent bombs
+                                found = True
+                                cell_flagged = False
+                                for i in range(-1, 2):
+                                    if row+i >= 0 and row+i < board_rows:
+                                        for j in range(-1, 2):
+                                            if (col+j >= 0 and col+j < board_columns) and (i != 0 or j != 0):
+                                                if ((row+i, col+j) not in revealed) and ((row+i, col+j) not in flagged):
+                                                    #Neighbor cell is hidden, flag neighbor
+                                                    flagged.add((row+i, col+j))
+                                                    cell_flagged = True
+                                                    break
+                                        if cell_flagged:
+                                            break
+                        if found:
+                            break
+                    if found:
+                        break
+                if not found:
+                    row = random.randint(0, board_rows-1)
+                    col = random.randint(0, board_columns-1)
+                    if (row, col) not in flagged:  # Can't reveal flagged cells
+                        if first_click:
+                            grid, bombs = ensure_safe_start(grid, row, col, bombs)
+                            first_click = False
+                            game_started = True
+                            start_time = time.time()
+                        if grid[row][col] == -1:
+                            revealed.add((row, col))
+                            game_over = True
+                        else:
+                            new_reveals = flood_fill(grid, row, col)
+                            revealed.update(new_reveals)
+                            
+                            # Check for win condition
+                            total_safe_cells = board_rows * board_columns - NUM_BOMBS
+                            if len(revealed) == total_safe_cells:
+                                game_won = True
+                                game_over = True
+
+                    
+
+
+
+
 
         # --- INPUT (mouse clicks) ---
         for event in pygame.event.get():
