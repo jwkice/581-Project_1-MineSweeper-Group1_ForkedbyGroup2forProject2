@@ -236,26 +236,35 @@ def main():
         if not game_over:
             time.sleep(1)
             if ai_mode == 'easy':
-                row = random.randint(0, board_rows-1)
-                col = random.randint(0, board_columns-1)
-                if (row, col) not in flagged:  # Can't reveal flagged cells
-                    if first_click:
-                        grid, bombs = ensure_safe_start(grid, row, col, bombs)
-                        first_click = False
-                        game_started = True
-                        start_time = time.time()
-                    if grid[row][col] == -1:
-                        revealed.add((row, col))
-                        game_over = True
-                    else:
-                        new_reveals = flood_fill(grid, row, col)
-                        revealed.update(new_reveals)
-                        
-                        # Check for win condition
-                        total_safe_cells = board_rows * board_columns - NUM_BOMBS
-                        if len(revealed) == total_safe_cells:
-                            game_won = True
-                            game_over = True
+                rand_rows = list(range(board_rows))
+                random.shuffle(rand_rows)
+                rand_cols = list(range(board_columns))
+                random.shuffle(rand_cols)
+                cell_revealed = False
+                for row in rand_rows:
+                    for col in rand_cols:
+                        if ((row, col) not in flagged) and ((row, col) not in revealed):  # Can't reveal flagged cells, or cells that are already revealed
+                            if first_click:
+                                grid, bombs = ensure_safe_start(grid, row, col, bombs)
+                                first_click = False
+                                game_started = True
+                                start_time = time.time()
+                            if grid[row][col] == -1:
+                                revealed.add((row, col))
+                                game_over = True
+                            else:
+                                new_reveals = flood_fill(grid, row, col)
+                                revealed.update(new_reveals)
+                                
+                                # Check for win condition
+                                total_safe_cells = board_rows * board_columns - NUM_BOMBS
+                                if len(revealed) == total_safe_cells:
+                                    game_won = True
+                                    game_over = True
+                            cell_revealed = True
+                            break
+                    if cell_revealed:
+                        break
             elif ai_mode == 'medium':
                 found = False
                 for row in range(board_rows):
@@ -274,8 +283,6 @@ def main():
                                                     if grid[row+i][col+j] == -1:
                                                         revealed.add((row+i, col+j))
                                                         game_over = True
-                                                        cell_revealed = True
-                                                        break
                                                     else:
                                                         new_reveals = flood_fill(grid, row+i, col+j)
                                                         revealed.update(new_reveals)
@@ -285,8 +292,8 @@ def main():
                                                         if len(revealed) == total_safe_cells:
                                                             game_won = True
                                                             game_over = True
-                                                        cell_revealed = True
-                                                        break
+                                                    cell_revealed = True
+                                                    break
                                         if cell_revealed:
                                             break
                             elif grid[row][col] == (hidden_neighbors(row, col, revealed, flagged, board_rows, board_columns) + flagged_neighbors(row, col, flagged, board_rows, board_columns)):
@@ -309,30 +316,35 @@ def main():
                     if found:
                         break
                 if not found:
-                    row = random.randint(0, board_rows-1)
-                    col = random.randint(0, board_columns-1)
-                    if (row, col) not in flagged:  # Can't reveal flagged cells
-                        if first_click:
-                            grid, bombs = ensure_safe_start(grid, row, col, bombs)
-                            first_click = False
-                            game_started = True
-                            start_time = time.time()
-                        if grid[row][col] == -1:
-                            revealed.add((row, col))
-                            game_over = True
-                        else:
-                            new_reveals = flood_fill(grid, row, col)
-                            revealed.update(new_reveals)
-                            
-                            # Check for win condition
-                            total_safe_cells = board_rows * board_columns - NUM_BOMBS
-                            if len(revealed) == total_safe_cells:
-                                game_won = True
-                                game_over = True
-
-                    
-
-
+                    rand_rows = list(range(board_rows))
+                    random.shuffle(rand_rows)
+                    rand_cols = list(range(board_columns))
+                    random.shuffle(rand_cols)
+                    cell_revealed = False
+                    for row in rand_rows:
+                        for col in rand_cols:
+                            if (row, col) not in flagged:  # Can't reveal flagged cells
+                                if first_click:
+                                    grid, bombs = ensure_safe_start(grid, row, col, bombs)
+                                    first_click = False
+                                    game_started = True
+                                    start_time = time.time()
+                                if grid[row][col] == -1:
+                                    revealed.add((row, col))
+                                    game_over = True
+                                else:
+                                    new_reveals = flood_fill(grid, row, col)
+                                    revealed.update(new_reveals)
+                                    
+                                    # Check for win condition
+                                    total_safe_cells = board_rows * board_columns - NUM_BOMBS
+                                    if len(revealed) == total_safe_cells:
+                                        game_won = True
+                                        game_over = True
+                                cell_revealed = True
+                                break
+                        if cell_revealed:
+                            break
 
 
 
