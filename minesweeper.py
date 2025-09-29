@@ -175,6 +175,10 @@ def flagged_neighbors(row, col, flagged, board_rows, board_cols):
                         num_flagged += 1
     return num_flagged
 
+def is_hidden(row, col, revealed, flagged):
+    '''For a given cell (row, col), returns True if the cell is not in revealed or flagged'''
+    return ((row, col) not in revealed) and ((row, col) not in flagged)
+
 def main():
     # Grid size
     board_rows = 10
@@ -205,7 +209,7 @@ def main():
     start_time = time.time()
     game_started = False
     
-    ai_mode = 'medium'
+    ai_mode = 'hard'    #Empty string for AI off, medium for medium, hard for hard, anything else for easy
 
     while running:
 
@@ -233,40 +237,10 @@ def main():
         
 
         # AI Solver
-        if not game_over:
+        if ai_mode and not game_over:
             time.sleep(1)
-            if ai_mode == 'easy':
-                rand_rows = list(range(board_rows))
-                random.shuffle(rand_rows)
-                rand_cols = list(range(board_columns))
-                random.shuffle(rand_cols)
-                cell_revealed = False
-                for row in rand_rows:
-                    for col in rand_cols:
-                        if ((row, col) not in flagged) and ((row, col) not in revealed):  # Can't reveal flagged cells, or cells that are already revealed
-                            if first_click:
-                                grid, bombs = ensure_safe_start(grid, row, col, bombs)
-                                first_click = False
-                                game_started = True
-                                start_time = time.time()
-                            if grid[row][col] == -1:
-                                revealed.add((row, col))
-                                game_over = True
-                            else:
-                                new_reveals = flood_fill(grid, row, col)
-                                revealed.update(new_reveals)
-                                
-                                # Check for win condition
-                                total_safe_cells = board_rows * board_columns - NUM_BOMBS
-                                if len(revealed) == total_safe_cells:
-                                    game_won = True
-                                    game_over = True
-                            cell_revealed = True
-                            break
-                    if cell_revealed:
-                        break
-            elif ai_mode == 'medium':
-                found = False
+            found = False
+            if ai_mode == 'medium' or ai_mode == 'hard':
                 for row in range(board_rows):
                     for col in range(board_columns):
                         if (row, col) in revealed and hidden_neighbors(row, col, revealed, flagged, board_rows, board_columns) != 0:
@@ -278,7 +252,7 @@ def main():
                                     if row+i >= 0 and row+i < board_rows:
                                         for j in range(-1, 2):
                                             if (col+j >= 0 and col+j < board_columns) and (i != 0 or j != 0):
-                                                if ((row+i, col+j) not in revealed) and ((row+i, col+j) not in flagged):
+                                                if is_hidden(row+i, col+j, revealed, flagged):
                                                     #Neighbor cell is hidden, reveal neighbor
                                                     if grid[row+i][col+j] == -1:
                                                         revealed.add((row+i, col+j))
@@ -304,7 +278,7 @@ def main():
                                     if row+i >= 0 and row+i < board_rows:
                                         for j in range(-1, 2):
                                             if (col+j >= 0 and col+j < board_columns) and (i != 0 or j != 0):
-                                                if ((row+i, col+j) not in revealed) and ((row+i, col+j) not in flagged):
+                                                if is_hidden(row+i, col+j, revealed, flagged):
                                                     #Neighbor cell is hidden, flag neighbor
                                                     flagged.add((row+i, col+j))
                                                     cell_flagged = True
@@ -315,36 +289,137 @@ def main():
                             break
                     if found:
                         break
-                if not found:
-                    rand_rows = list(range(board_rows))
-                    random.shuffle(rand_rows)
-                    rand_cols = list(range(board_columns))
-                    random.shuffle(rand_cols)
-                    cell_revealed = False
-                    for row in rand_rows:
-                        for col in rand_cols:
-                            if (row, col) not in flagged:  # Can't reveal flagged cells
-                                if first_click:
-                                    grid, bombs = ensure_safe_start(grid, row, col, bombs)
-                                    first_click = False
-                                    game_started = True
-                                    start_time = time.time()
-                                if grid[row][col] == -1:
-                                    revealed.add((row, col))
-                                    game_over = True
-                                else:
-                                    new_reveals = flood_fill(grid, row, col)
-                                    revealed.update(new_reveals)
-                                    
-                                    # Check for win condition
-                                    total_safe_cells = board_rows * board_columns - NUM_BOMBS
-                                    if len(revealed) == total_safe_cells:
-                                        game_won = True
-                                        game_over = True
-                                cell_revealed = True
-                                break
-                        if cell_revealed:
+            
+            if not found and ai_mode == 'hard':
+                #1-2-1 pattern rule
+                found = False
+                for row in range(board_rows):
+                    for col in range(board_columns):
+                        if grid[row][col] == 2: #Identified revealed cell with 2
+                            if row-1 >= 0 and row+1 < board_rows and col-1 >= 0 and col+1 < board_columns:  #2 cell is not on the edge
+                                if (grid[row-1][col] == 1 and grid[row+1][col] == 1) or (grid[row][col-1] == 1 and grid[row][col+1] == 1): #Found 1-2-1 pattern
+                                    if is_hidden(row-1, col-1, revealed, flagged) and is_hidden(row+1, col-1, revealed, flagged) and is_hidden(row-1, col+1, revealed, flagged) and is_hidden(row+1, col+1, revealed, flagged): #All corners are hidden
+                                        if (grid[row-1][col] == 1 and grid[row+1][col] == 1):   #Pattern is across rows
+                                            if is_hidden(row, col-1, revealed, flagged):
+                                                found = True
+                                                if grid[row][col-1] == -1:
+                                                    revealed.add((row, col-1))
+                                                    game_over = True
+                                                else:
+                                                    new_reveals = flood_fill(grid, row, col-1)
+                                                    revealed.update(new_reveals)
+                                                    
+                                                    # Check for win condition
+                                                    total_safe_cells = board_rows * board_columns - NUM_BOMBS
+                                                    if len(revealed) == total_safe_cells:
+                                                        game_won = True
+                                                        game_over = True
+                                            elif is_hidden(row, col+1, revealed, flagged):
+                                                found = True
+                                                if grid[row][col+1] == -1:
+                                                    revealed.add((row, col+1))
+                                                    game_over = True
+                                                else:
+                                                    new_reveals = flood_fill(grid, row, col+1)
+                                                    revealed.update(new_reveals)
+                                                    
+                                                    # Check for win condition
+                                                    total_safe_cells = board_rows * board_columns - NUM_BOMBS
+                                                    if len(revealed) == total_safe_cells:
+                                                        game_won = True
+                                                        game_over = True
+                                        elif (grid[row][col-1] == 1 and grid[row][col+1] == 1):   #Pattern is across cols
+                                            if is_hidden(row-1, col, revealed, flagged):
+                                                found = True
+                                                if grid[row-1][col] == -1:
+                                                    revealed.add((row-1, col))
+                                                    game_over = True
+                                                else:
+                                                    new_reveals = flood_fill(grid, row-1, col)
+                                                    revealed.update(new_reveals)
+                                                    
+                                                    # Check for win condition
+                                                    total_safe_cells = board_rows * board_columns - NUM_BOMBS
+                                                    if len(revealed) == total_safe_cells:
+                                                        game_won = True
+                                                        game_over = True
+                                            elif is_hidden(row+1, col, revealed, flagged):
+                                                found = True
+                                                if grid[row+1][col] == -1:
+                                                    revealed.add((row+1, col))
+                                                    game_over = True
+                                                else:
+                                                    new_reveals = flood_fill(grid, row+1, col)
+                                                    revealed.update(new_reveals)
+                                                    
+                                                    # Check for win condition
+                                                    total_safe_cells = board_rows * board_columns - NUM_BOMBS
+                                                    if len(revealed) == total_safe_cells:
+                                                        game_won = True
+                                                        game_over = True
+                                    elif (row-1, col-1) in revealed:    #Cell offset by -1, -1 is revealed, cell on opposite side of pattern must be bomb
+                                        if (grid[row-1][col] == 1 and grid[row+1][col] == 1) and is_hidden(row-1, col+1, revealed, flagged):   #Pattern is across rows and opposite cell is hidden
+                                            flagged.add((row-1, col+1))
+                                            found = True
+                                        elif (grid[row][col-1] == 1 and grid[row][col+1] == 1) and is_hidden(row+1, col-1, revealed, flagged):   #Pattern is across cols and opposite cell is hidden
+                                            flagged.add((row+1, col-1))
+                                            found = True
+                                    elif (row+1, col-1) in revealed:    #Cell offset by +1, -1 is revealed, cell on opposite side of pattern must be bomb
+                                        if (grid[row-1][col] == 1 and grid[row+1][col] == 1) and is_hidden(row+1, col+1, revealed, flagged):   #Pattern is across rows and opposite cell is hidden
+                                            flagged.add((row+1, col+1))
+                                            found = True
+                                        elif (grid[row][col-1] == 1 and grid[row][col+1] == 1) and is_hidden(row-1, col-1, revealed, flagged):   #Pattern is across cols and opposite cell is hidden
+                                            flagged.add((row-1, col-1))
+                                            found = True
+                                    elif (row-1, col+1) in revealed:    #Cell offset by -1, +1 is revealed, cell on opposite side of pattern must be bomb
+                                        if (grid[row-1][col] == 1 and grid[row+1][col] == 1) and is_hidden(row-1, col-1, revealed, flagged):   #Pattern is across rows and opposite cell is hidden
+                                            flagged.add((row-1, col-1))
+                                            found = True
+                                        elif (grid[row][col-1] == 1 and grid[row][col+1] == 1) and is_hidden(row+1, col+1, revealed, flagged):   #Pattern is across cols and opposite cell is hidden
+                                            flagged.add((row+1, col+1))
+                                            found = True
+                                    elif (row+1, col+1) in revealed:    #Cell offset by +1, +1 is revealed, cell on opposite side of pattern must be bomb
+                                        if (grid[row-1][col] == 1 and grid[row+1][col] == 1) and is_hidden(row+1, col-1, revealed, flagged):   #Pattern is across rows and opposite cell is hidden
+                                            flagged.add((row+1, col-1))
+                                            found = True
+                                        elif (grid[row][col-1] == 1 and grid[row][col+1] == 1) and is_hidden(row-1, col+1, revealed, flagged):   #Pattern is across cols and opposite cell is hidden
+                                            flagged.add((row-1, col+1))
+                                            found = True
+                        if found:
                             break
+                    if found:
+                        break
+                            
+            if not found:
+                rand_rows = list(range(board_rows))
+                random.shuffle(rand_rows)
+                rand_cols = list(range(board_columns))
+                random.shuffle(rand_cols)
+                cell_revealed = False
+                for row in rand_rows:
+                    for col in rand_cols:
+                        if (row, col) not in flagged:  # Can't reveal flagged cells
+                            if first_click:
+                                grid, bombs = ensure_safe_start(grid, row, col, bombs)
+                                first_click = False
+                                game_started = True
+                                start_time = time.time()
+                            if grid[row][col] == -1:
+                                revealed.add((row, col))
+                                game_over = True
+                            else:
+                                new_reveals = flood_fill(grid, row, col)
+                                revealed.update(new_reveals)
+                                
+                                # Check for win condition
+                                total_safe_cells = board_rows * board_columns - NUM_BOMBS
+                                if len(revealed) == total_safe_cells:
+                                    game_won = True
+                                    game_over = True
+                            cell_revealed = True
+                            break
+                    if cell_revealed:
+                        break
 
 
 
