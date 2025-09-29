@@ -209,7 +209,9 @@ def main():
     start_time = time.time()
     game_started = False
     
-    ai_mode = 'hard'    #Empty string for AI off, medium for medium, hard for hard, anything else for easy
+    ai_level = 'medium'    #medium for medium, hard for hard, anything else for easy
+    ai_mode = 'interactive' #interactive or automatic, anything else for off
+    players_turn = True  #for interactive mode: True if it is player's turn, False if it is computer's turn
 
     while running:
 
@@ -237,10 +239,10 @@ def main():
         
 
         # AI Solver
-        if ai_mode and not game_over:
+        if not game_over and (ai_mode == 'automatic' or (ai_mode == 'interactive' and not players_turn)):
             time.sleep(1)
             found = False
-            if ai_mode == 'medium' or ai_mode == 'hard':
+            if ai_level == 'medium' or ai_level == 'hard':
                 for row in range(board_rows):
                     for col in range(board_columns):
                         if (row, col) in revealed and hidden_neighbors(row, col, revealed, flagged, board_rows, board_columns) != 0:
@@ -266,6 +268,7 @@ def main():
                                                         if len(revealed) == total_safe_cells:
                                                             game_won = True
                                                             game_over = True
+                                                    players_turn = True
                                                     cell_revealed = True
                                                     break
                                         if cell_revealed:
@@ -281,6 +284,7 @@ def main():
                                                 if is_hidden(row+i, col+j, revealed, flagged):
                                                     #Neighbor cell is hidden, flag neighbor
                                                     flagged.add((row+i, col+j))
+                                                    players_turn = True
                                                     cell_flagged = True
                                                     break
                                         if cell_flagged:
@@ -290,7 +294,7 @@ def main():
                     if found:
                         break
             
-            if not found and ai_mode == 'hard':
+            if not found and ai_level == 'hard':
                 #1-2-1 pattern rule
                 found = False
                 for row in range(board_rows):
@@ -301,7 +305,6 @@ def main():
                                     if is_hidden(row-1, col-1, revealed, flagged) and is_hidden(row+1, col-1, revealed, flagged) and is_hidden(row-1, col+1, revealed, flagged) and is_hidden(row+1, col+1, revealed, flagged): #All corners are hidden
                                         if (grid[row-1][col] == 1 and grid[row+1][col] == 1):   #Pattern is across rows
                                             if is_hidden(row, col-1, revealed, flagged):
-                                                found = True
                                                 if grid[row][col-1] == -1:
                                                     revealed.add((row, col-1))
                                                     game_over = True
@@ -314,8 +317,9 @@ def main():
                                                     if len(revealed) == total_safe_cells:
                                                         game_won = True
                                                         game_over = True
-                                            elif is_hidden(row, col+1, revealed, flagged):
                                                 found = True
+                                                players_turn = True
+                                            elif is_hidden(row, col+1, revealed, flagged):
                                                 if grid[row][col+1] == -1:
                                                     revealed.add((row, col+1))
                                                     game_over = True
@@ -328,9 +332,10 @@ def main():
                                                     if len(revealed) == total_safe_cells:
                                                         game_won = True
                                                         game_over = True
+                                                found = True
+                                                players_turn = True
                                         elif (grid[row][col-1] == 1 and grid[row][col+1] == 1):   #Pattern is across cols
                                             if is_hidden(row-1, col, revealed, flagged):
-                                                found = True
                                                 if grid[row-1][col] == -1:
                                                     revealed.add((row-1, col))
                                                     game_over = True
@@ -343,8 +348,9 @@ def main():
                                                     if len(revealed) == total_safe_cells:
                                                         game_won = True
                                                         game_over = True
-                                            elif is_hidden(row+1, col, revealed, flagged):
                                                 found = True
+                                                players_turn = True
+                                            elif is_hidden(row+1, col, revealed, flagged):
                                                 if grid[row+1][col] == -1:
                                                     revealed.add((row+1, col))
                                                     game_over = True
@@ -357,34 +363,44 @@ def main():
                                                     if len(revealed) == total_safe_cells:
                                                         game_won = True
                                                         game_over = True
+                                                found = True
+                                                players_turn = True
                                     elif (row-1, col-1) in revealed:    #Cell offset by -1, -1 is revealed, cell on opposite side of pattern must be bomb
                                         if (grid[row-1][col] == 1 and grid[row+1][col] == 1) and is_hidden(row-1, col+1, revealed, flagged):   #Pattern is across rows and opposite cell is hidden
                                             flagged.add((row-1, col+1))
                                             found = True
+                                            players_turn = True
                                         elif (grid[row][col-1] == 1 and grid[row][col+1] == 1) and is_hidden(row+1, col-1, revealed, flagged):   #Pattern is across cols and opposite cell is hidden
                                             flagged.add((row+1, col-1))
                                             found = True
+                                            players_turn = True
                                     elif (row+1, col-1) in revealed:    #Cell offset by +1, -1 is revealed, cell on opposite side of pattern must be bomb
                                         if (grid[row-1][col] == 1 and grid[row+1][col] == 1) and is_hidden(row+1, col+1, revealed, flagged):   #Pattern is across rows and opposite cell is hidden
                                             flagged.add((row+1, col+1))
                                             found = True
+                                            players_turn = True
                                         elif (grid[row][col-1] == 1 and grid[row][col+1] == 1) and is_hidden(row-1, col-1, revealed, flagged):   #Pattern is across cols and opposite cell is hidden
                                             flagged.add((row-1, col-1))
                                             found = True
+                                            players_turn = True
                                     elif (row-1, col+1) in revealed:    #Cell offset by -1, +1 is revealed, cell on opposite side of pattern must be bomb
                                         if (grid[row-1][col] == 1 and grid[row+1][col] == 1) and is_hidden(row-1, col-1, revealed, flagged):   #Pattern is across rows and opposite cell is hidden
                                             flagged.add((row-1, col-1))
                                             found = True
+                                            players_turn = True
                                         elif (grid[row][col-1] == 1 and grid[row][col+1] == 1) and is_hidden(row+1, col+1, revealed, flagged):   #Pattern is across cols and opposite cell is hidden
                                             flagged.add((row+1, col+1))
                                             found = True
+                                            players_turn = True
                                     elif (row+1, col+1) in revealed:    #Cell offset by +1, +1 is revealed, cell on opposite side of pattern must be bomb
                                         if (grid[row-1][col] == 1 and grid[row+1][col] == 1) and is_hidden(row+1, col-1, revealed, flagged):   #Pattern is across rows and opposite cell is hidden
                                             flagged.add((row+1, col-1))
                                             found = True
+                                            players_turn = True
                                         elif (grid[row][col-1] == 1 and grid[row][col+1] == 1) and is_hidden(row-1, col+1, revealed, flagged):   #Pattern is across cols and opposite cell is hidden
                                             flagged.add((row-1, col+1))
                                             found = True
+                                            players_turn = True
                         if found:
                             break
                     if found:
@@ -416,6 +432,7 @@ def main():
                                 if len(revealed) == total_safe_cells:
                                     game_won = True
                                     game_over = True
+                            players_turn = True
                             cell_revealed = True
                             break
                     if cell_revealed:
@@ -452,7 +469,7 @@ def main():
                         continue
                 
                 # Game board clicks (only if not game over)
-                if not game_over and my > UI_HEIGHT:
+                if not game_over and my > UI_HEIGHT and ai_mode != 'automatic' and players_turn:
                     col = mx // cell_size
                     row = (my - UI_HEIGHT) // cell_size
                     if 0 <= row < board_rows and 0 <= col < board_columns:
@@ -463,6 +480,8 @@ def main():
                                     flagged.remove((row, col))
                                 else:
                                     flagged.add((row, col))
+                                if ai_mode == 'interactive':
+                                    players_turn = False
                         # Left click for revealing
                         elif event.button == 1:  # Left click
                             if (row, col) not in flagged:  # Can't reveal flagged cells
@@ -483,6 +502,8 @@ def main():
                                     if len(revealed) == total_safe_cells:
                                         game_won = True
                                         game_over = True
+                                if ai_mode == 'interactive':
+                                    players_turn = False
 
         #draw board
         for row in range(board_rows):
