@@ -105,7 +105,7 @@ def generate_numbers(grid):
                             bomb_count += 1
                 grid[i][j] = bomb_count
 
-def draw_game_over_popup(screen, width, height, game_won=False):
+def draw_game_over_popup(screen, width, height, ai_mode, players_turn, game_won=False):
     """Draw a game over popup with play again and quit buttons"""
     # Semi-transparent overlay
     overlay = pygame.Surface((width, height))
@@ -125,7 +125,25 @@ def draw_game_over_popup(screen, width, height, game_won=False):
     
     # Title
     title_font = pygame.font.Font(None, 36)
-    title_text = "You Won!" if game_won else "Game Over!"
+    if ai_mode == 'interactive':
+        if game_won:
+            if not players_turn:    #Turns are switched after every move. Whoever's turn it is NOT played the last move
+                #Player made final move
+                title_text = 'You Won!'
+            else:
+                #Computer made final move
+                title_text = 'Computer Won!'
+        else:
+            if not players_turn:
+                #Player made final move
+                title_text = 'Game Over! You Lost!'
+            else:
+                #Computer made final move
+                title_text = 'Game Over! Computer Lost!'
+    elif ai_mode == 'automatic':
+        title_text = "Computer Won!" if game_won else "Game Over!"
+    else:
+        title_text = "You Won!" if game_won else "Game Over!"
     title_color = (0, 128, 0) if game_won else (255, 0, 0)
     title_surface = title_font.render(title_text, True, title_color)
     title_rect = title_surface.get_rect(center=(popup_x + popup_width//2, popup_y + 50))
@@ -209,8 +227,8 @@ def main():
     start_time = time.time()
     game_started = False
     
-    ai_level = 'medium'    #medium for medium, hard for hard, anything else for easy
-    ai_mode = 'interactive' #interactive or automatic, anything else for off
+    ai_level = 'hard'    #medium for medium, hard for hard, anything else for easy
+    ai_mode = 'off' #interactive or automatic, anything else for off
     players_turn = True  #for interactive mode: True if it is player's turn, False if it is computer's turn
 
     while running:
@@ -449,7 +467,7 @@ def main():
                 
                 # Check if clicking on game over popup buttons
                 if game_over:
-                    play_again_rect, quit_rect = draw_game_over_popup(screen, BOARD_WIDTH, BOARD_HEIGHT, game_won)
+                    play_again_rect, quit_rect = draw_game_over_popup(screen, BOARD_WIDTH, BOARD_HEIGHT, ai_mode, players_turn, game_won)
                     if play_again_rect.collidepoint(mx, my):
                         # Reset game
                         grid = [[0 for _ in range(board_columns)] for _ in range(board_rows)]
@@ -562,7 +580,7 @@ def main():
     
         # Draw game over popup if game is over
         if game_over:
-            draw_game_over_popup(screen, BOARD_WIDTH, BOARD_HEIGHT, game_won)
+            draw_game_over_popup(screen, BOARD_WIDTH, BOARD_HEIGHT, ai_mode, players_turn, game_won)
         #update display
         pygame.display.flip()
     pygame.quit()
