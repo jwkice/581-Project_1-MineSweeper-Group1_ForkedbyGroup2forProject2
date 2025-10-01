@@ -1,10 +1,11 @@
+import os
 import pygame 
 import random
 import time
 
 pygame.init()
+os.system('clear' if os.name != 'nt' else 'cls') # gets rid of stupid warning
 
-NUM_BOMBS: int = 16
 BOARD_WIDTH: int = 500
 BOARD_HEIGHT: int = 600
 UI_HEIGHT: int = 100 
@@ -199,9 +200,43 @@ def is_hidden(row, col, revealed, flagged):
 
 def main():
     # Grid size
-    board_rows = 10
-    board_columns = 10
-    cell_size = BOARD_WIDTH // board_columns
+
+    # get user values for board size and bombs
+    print("===== MINESWEEPER =====\n-----------\n Settings |\n-----------\n ")
+    board_rows = int(input("Rows? "))
+    board_columns = int(input("Columns? "))
+    NUM_BOMBS = int(input("Bombs? "))
+
+    if board_rows < board_columns:
+        cell_size = (BOARD_WIDTH - UI_HEIGHT) // board_columns
+    
+    else:
+        cell_size = (BOARD_HEIGHT - UI_HEIGHT) // board_rows
+
+    # ask if use wants to use AI
+    ai_bool_query = input("AI? (on/off): ").lower()
+    if ai_bool_query == 'on':
+        ai_type_query = input("Interactive or Automatic? (i/a): ").lower() #interactive anything else is automatic
+        ai_level_query = input("AI Difficulty? (easy/medium/hard): ").lower() #medium for medium, hard for hard, anything else for easy
+        
+        match ai_type_query:
+            case 'interactive':
+                ai_mode = 'interactive'
+            case _:
+                ai_mode = 'automatic'
+        
+        match ai_level_query:
+            case 'hard':
+                ai_level = 'hard'
+
+            case 'medium':
+                ai_level = 'medium'
+
+            case _:
+                ai_level = 'easy'
+    
+    else:
+        ai_mode = 'off'
 
     screen = pygame.display.set_mode((BOARD_WIDTH, BOARD_HEIGHT))
     pygame.display.set_caption("Minesweeper")
@@ -227,8 +262,7 @@ def main():
     start_time = time.time()
     game_started = False
     
-    ai_level = 'hard'    #medium for medium, hard for hard, anything else for easy
-    ai_mode = 'off' #interactive or automatic, anything else for off
+    
     players_turn = True  #for interactive mode: True if it is player's turn, False if it is computer's turn
 
     while running:
