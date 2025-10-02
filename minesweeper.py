@@ -216,7 +216,7 @@ def main():
     # ask if use wants to use AI
     ai_bool_query = input("AI? (on/off): ").lower()
     if ai_bool_query == 'on':
-        ai_type_query = input("Interactive or Automatic? (i/a): ").lower() #interactive anything else is automatic
+        ai_type_query = input("Interactive or Automatic? (interactive/automatic): ").lower() #interactive anything else is automatic
         ai_level_query = input("AI Difficulty? (easy/medium/hard): ").lower() #medium for medium, hard for hard, anything else for easy
         
         match ai_type_query:
@@ -466,7 +466,7 @@ def main():
                 cell_revealed = False
                 for row in rand_rows:
                     for col in rand_cols:
-                        if (row, col) not in flagged:  # Can't reveal flagged cells
+                        if (row, col) not in flagged and (row, col) not in revealed:  # Can't reveal flagged or already revealed cells
                             if first_click:
                                 grid, bombs = ensure_safe_start(grid, row, col, bombs)
                                 first_click = False
