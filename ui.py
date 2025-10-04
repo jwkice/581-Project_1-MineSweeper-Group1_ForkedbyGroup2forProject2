@@ -131,3 +131,91 @@ def draw_ui(screen, elapsed_time, num_bombs, num_flagged, game_started, game_ove
     remaining_bombs = num_bombs - num_flagged
     bomb_surface = bomb_font.render(f"Bombs: {remaining_bombs}", True, COLOR_BLACK)
     screen.blit(bomb_surface, (BOARD_WIDTH - 100, 60))
+
+def options(screen):
+    board_rows, board_cols, num_bombs = 10, 10, 15
+
+    ai_enabled = False
+    ai_mode = "off"
+    ai_difficulty = "easy"
+
+    font = pygame.font.Font(None, 28)
+    choosing = True
+    curr_box = None
+    userbox = {
+        'row_selection': pygame.Rect(180, 100, 100, 40),
+        'col_selection': pygame.Rect(180, 150, 100, 40),
+        'bomb_count': pygame.Rect(180, 200, 100, 40)
+        }
+    values = {"row_selection": str(board_rows), "col_selection": str(board_cols), "bomb_count": str(num_bombs)}
+
+    ai_toggle = pygame.Rect(150, 270, 150, 40)
+
+    ai_mode = {
+        "interactive" : pygame.Rect(150, 320, 120, 40),
+        "automatic" : pygame.Rect(280, 320, 120, 40)
+    }
+
+    ai_level = {
+        "easy" : pygame.Rect(150, 370, 80, 40),
+        "medium": pygame.Rect(240, 370, 100, 40),
+        "hard" : pygame.Rect(350, 370, 80, 40) 
+    }
+
+    start = pygame.Rect(150, 380, 200, 50)
+
+    while choosing:
+        screen.fill((0,0,0))
+
+        labels = [("Rows", "row_selection", 105), ("Cols", "col_selection", 160), ("Bombs", "bomb_count", 210)]
+
+        for i, (label, key, y) in enumerate(labels):
+            curr_label = font.render(label, True, (255,255,255))
+            screen.blit(curr_label, (100, y))
+
+            color = (0,200,0)
+            pygame.draw.rect(screen, color, userbox[key], 2)
+
+            # Render current text
+            typed_txt = font.render(values[key], True, (255,255,255))
+            screen.blit(typed_txt, (userbox[key].x+5, userbox[key].y+5))
+        
+        pygame.draw.rect(screen, (0,200,0), start)
+        start_text = font.render("Start Game", True, (255,255,255))
+        screen.blit(start_text, (start.x+30, start.y+10))
+
+        # Event handling
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mx, my = event.pos
+                curr_box = None
+                for key, rect in userbox.items():
+                    if rect.collidepoint(mx, my):
+                        curr_box = key
+                if start.collidepoint(mx, my):
+                    try:
+                        rows = max(2, int(values["row_selection"]))
+                        cols = max(2, int(values["col_selection"]))
+                        bombs = max(1, min(int(values["bomb_count"]), rows*cols-1))
+                        choosing = False
+                    except ValueError:
+                        pass  # ignore if invalid
+
+            elif event.type == pygame.KEYDOWN and curr_box:
+                if event.key == pygame.K_BACKSPACE:
+                    values[curr_box] = values[curr_box][:-1]
+                elif event.unicode.isdigit():
+                    values[curr_box] += event.unicode
+
+        pygame.display.flip()
+
+    return rows, cols, bombs
+    
+        
+
+
+

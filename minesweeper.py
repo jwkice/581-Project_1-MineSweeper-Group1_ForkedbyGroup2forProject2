@@ -2,6 +2,7 @@ import os
 import pygame 
 import random
 import time
+from ui import options
 
 pygame.init()
 os.system('clear' if os.name != 'nt' else 'cls') # gets rid of stupid warning
@@ -202,10 +203,10 @@ def main():
     # Grid size
 
     # get user values for board size and bombs
-    print("===== MINESWEEPER =====\n-----------\n Settings |\n-----------\n ")
-    board_rows = int(input("Rows? "))
-    board_columns = int(input("Columns? "))
-    NUM_BOMBS = int(input("Bombs? "))
+    screen = pygame.display.set_mode((BOARD_WIDTH, BOARD_HEIGHT))
+    pygame.display.set_caption("Minesweeper")
+    board_rows, board_columns, NUM_BOMBS = options(screen)
+
 
     if board_rows < board_columns:
         cell_size = (BOARD_WIDTH - UI_HEIGHT) // board_columns
