@@ -133,9 +133,10 @@ def draw_ui(screen, elapsed_time, num_bombs, num_flagged, game_started, game_ove
     screen.blit(bomb_surface, (BOARD_WIDTH - 100, 60))
 
 def options(screen):
+    "Code for game settings page: Grid Size, Number of Bombs, AI mode and Difficulty"
     board_rows, board_cols, num_bombs = 10, 10, 15
 
-    ai_enabled = False
+    ai_on = False
     ai_mode = "off"
     ai_difficulty = "easy"
 
@@ -151,18 +152,18 @@ def options(screen):
 
     ai_toggle = pygame.Rect(150, 270, 150, 40)
 
-    ai_mode = {
-        "interactive" : pygame.Rect(150, 320, 120, 40),
-        "automatic" : pygame.Rect(280, 320, 120, 40)
+    ai_mode_opts = {
+        "interactive" : pygame.Rect(50, 320, 150, 40),
+        "automatic" : pygame.Rect(240, 320, 150, 40)
     }
 
-    ai_level = {
-        "easy" : pygame.Rect(150, 370, 80, 40),
-        "medium": pygame.Rect(240, 370, 100, 40),
-        "hard" : pygame.Rect(350, 370, 80, 40) 
+    ai_difficulty_opts = {
+        "easy" : pygame.Rect(50, 370, 80, 40),
+        "medium": pygame.Rect(170, 370, 100, 40),
+        "hard" : pygame.Rect(310, 370, 80, 40) 
     }
 
-    start = pygame.Rect(150, 380, 200, 50)
+    start = pygame.Rect(150, 440, 200, 50)
 
     while choosing:
         screen.fill((0,0,0))
@@ -176,7 +177,6 @@ def options(screen):
             color = (0,200,0)
             pygame.draw.rect(screen, color, userbox[key], 2)
 
-            # Render current text
             typed_txt = font.render(values[key], True, (255,255,255))
             screen.blit(typed_txt, (userbox[key].x+5, userbox[key].y+5))
         
@@ -184,7 +184,7 @@ def options(screen):
         start_text = font.render("Start Game", True, (255,255,255))
         screen.blit(start_text, (start.x+30, start.y+10))
 
-        # Event handling
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -197,13 +197,25 @@ def options(screen):
                     if rect.collidepoint(mx, my):
                         curr_box = key
                 if start.collidepoint(mx, my):
-                    try:
-                        rows = max(2, int(values["row_selection"]))
-                        cols = max(2, int(values["col_selection"]))
-                        bombs = max(1, min(int(values["bomb_count"]), rows*cols-1))
-                        choosing = False
-                    except ValueError:
-                        pass  # ignore if invalid
+                    rows = max(2, int(values["row_selection"]))
+                    cols = max(2, int(values["col_selection"]))
+                    bombs = max(1, min(int(values["bomb_count"]), rows*cols-1))
+                    choosing = False
+                
+                if ai_toggle.collidepoint(mx, my):
+                    ai_on = not ai_on
+                    if not ai_on:
+                        ai_mode = "off"
+                
+                if ai_on:
+                    for key, val in ai_mode_opts.items():
+                        if val.collidepoint(mx, my):
+                            ai_mode = key
+                    
+                    for key, val in ai_difficulty_opts.items():
+                        if val.collidepoint(mx, my):
+                            ai_difficulty = key
+
 
             elif event.type == pygame.KEYDOWN and curr_box:
                 if event.key == pygame.K_BACKSPACE:
@@ -211,11 +223,23 @@ def options(screen):
                 elif event.unicode.isdigit():
                     values[curr_box] += event.unicode
 
+        pygame.draw.rect(screen, (0, 200, 0) if ai_on else (200, 0, 0), ai_toggle)
+        toggle_text = font.render("AI: ON" if ai_on else "AI: OFF", True, (255, 255, 255))
+        screen.blit(toggle_text, (ai_toggle.x + 25, ai_toggle.y + 10))
+
+        if ai_on:
+            for key, val in ai_mode_opts.items():
+                color = (0, 200, 0) if ai_mode == key else (100, 100, 100)
+                pygame.draw.rect(screen, color, val)
+                text = font.render(key.upper(), True, (255,255,255))
+                screen.blit(text, (val.x + 10, val.y + 10))
+
+            for key, val in ai_difficulty_opts.items():
+                color = (0, 200, 0) if ai_difficulty == key else (100, 100, 100)
+                pygame.draw.rect(screen, color, val)
+                text = font.render(key.upper(), True, (255,255,255))
+                screen.blit(text, (val.x + 10, val.y + 10))
+
         pygame.display.flip()
 
-    return rows, cols, bombs
-    
-        
-
-
-
+    return rows, cols, bombs, ai_mode, ai_difficulty
