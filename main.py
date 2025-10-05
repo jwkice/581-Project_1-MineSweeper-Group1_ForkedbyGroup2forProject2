@@ -7,7 +7,7 @@ import time
 from constants import *
 from grid import generate_bombs, generate_numbers, ensure_safe_start, flood_fill
 from ai_solver import try_basic_moves, try_121_pattern, make_random_move
-from ui import draw_game_over_popup, draw_board, draw_ui
+from ui import draw_game_over_popup, draw_board, draw_ui, options
 
 
 def get_game_settings():
@@ -147,11 +147,18 @@ def main():
     os.system('clear' if os.name != 'nt' else 'cls')
     
     # Get game settings
-    board_rows, board_columns, num_bombs, cell_size, ai_mode, ai_level = get_game_settings()
     
     # Initialize pygame
     screen = pygame.display.set_mode((BOARD_WIDTH, BOARD_HEIGHT))
     pygame.display.set_caption("Minesweeper")
+
+    board_rows, board_columns, num_bombs, ai_mode, ai_level = options(screen)
+
+    if board_rows < board_columns:
+        cell_size = (BOARD_WIDTH - UI_HEIGHT) // board_columns
+    else:
+        cell_size = (BOARD_HEIGHT - UI_HEIGHT) // board_rows
+
     pygame.font.init()
     font = pygame.font.Font(None, cell_size // 2)
     

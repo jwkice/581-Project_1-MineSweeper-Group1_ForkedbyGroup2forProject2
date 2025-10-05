@@ -136,6 +136,7 @@ def options(screen):
     "Code for game settings page: Grid Size, Number of Bombs, AI mode and Difficulty"
     board_rows, board_cols, num_bombs = 10, 10, 15
 
+    #Three AI solver settings
     ai_on = False
     ai_mode = "off"
     ai_difficulty = "easy"
@@ -143,6 +144,7 @@ def options(screen):
     font = pygame.font.Font(None, 28)
     choosing = True
     curr_box = None
+    #Grid Size Buttons
     userbox = {
         'row_selection': pygame.Rect(180, 100, 100, 40),
         'col_selection': pygame.Rect(180, 150, 100, 40),
@@ -150,26 +152,30 @@ def options(screen):
         }
     values = {"row_selection": str(board_rows), "col_selection": str(board_cols), "bomb_count": str(num_bombs)}
 
+    #AI on/off button
     ai_toggle = pygame.Rect(150, 270, 150, 40)
 
+    #AI mode options
     ai_mode_opts = {
         "interactive" : pygame.Rect(50, 320, 150, 40),
         "automatic" : pygame.Rect(240, 320, 150, 40)
     }
 
+    #AI difficulty levels
     ai_difficulty_opts = {
         "easy" : pygame.Rect(50, 370, 80, 40),
         "medium": pygame.Rect(170, 370, 100, 40),
         "hard" : pygame.Rect(310, 370, 80, 40) 
     }
 
+    #Start button
     start = pygame.Rect(150, 440, 200, 50)
-
     while choosing:
         screen.fill((0,0,0))
 
         labels = [("Rows", "row_selection", 105), ("Cols", "col_selection", 160), ("Bombs", "bomb_count", 210)]
-
+        
+        #insert grid size buttons onto screen
         for i, (label, key, y) in enumerate(labels):
             curr_label = font.render(label, True, (255,255,255))
             screen.blit(curr_label, (100, y))
@@ -184,12 +190,13 @@ def options(screen):
         start_text = font.render("Start Game", True, (255,255,255))
         screen.blit(start_text, (start.x+30, start.y+10))
 
-
+        #Event Handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-
+            
+            #If mouse is clicked
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mx, my = event.pos
                 curr_box = None
@@ -201,28 +208,29 @@ def options(screen):
                     cols = max(2, int(values["col_selection"]))
                     bombs = max(1, min(int(values["bomb_count"]), rows*cols-1))
                     choosing = False
-                
+                #alternate ai_mode button
                 if ai_toggle.collidepoint(mx, my):
                     ai_on = not ai_on
                     if not ai_on:
                         ai_mode = "off"
-                
+                #check which ai mode and ai difficulty is chosen
                 if ai_on:
                     for key, val in ai_mode_opts.items():
                         if val.collidepoint(mx, my):
                             ai_mode = key
-                    
+
                     for key, val in ai_difficulty_opts.items():
                         if val.collidepoint(mx, my):
                             ai_difficulty = key
 
-
+            #typing in gride size boxes update when keyboard pressed in the box
             elif event.type == pygame.KEYDOWN and curr_box:
                 if event.key == pygame.K_BACKSPACE:
                     values[curr_box] = values[curr_box][:-1]
                 elif event.unicode.isdigit():
                     values[curr_box] += event.unicode
 
+        #draw ai buttons based on ai toggle switch
         pygame.draw.rect(screen, (0, 200, 0) if ai_on else (200, 0, 0), ai_toggle)
         toggle_text = font.render("AI: ON" if ai_on else "AI: OFF", True, (255, 255, 255))
         screen.blit(toggle_text, (ai_toggle.x + 25, ai_toggle.y + 10))
