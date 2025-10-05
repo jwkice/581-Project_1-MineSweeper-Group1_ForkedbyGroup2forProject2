@@ -205,7 +205,7 @@ def main():
     # get user values for board size and bombs
     screen = pygame.display.set_mode((BOARD_WIDTH, BOARD_HEIGHT))
     pygame.display.set_caption("Minesweeper")
-    board_rows, board_columns, NUM_BOMBS = options(screen)
+    board_rows, board_columns, NUM_BOMBS, ai_mode, ai_level = options(screen)
 
 
     if board_rows < board_columns:
@@ -215,29 +215,29 @@ def main():
         cell_size = (BOARD_HEIGHT - UI_HEIGHT) // board_rows
 
     # ask if use wants to use AI
-    ai_bool_query = input("AI? (on/off): ").lower()
-    if ai_bool_query == 'on':
-        ai_type_query = input("Interactive or Automatic? (interactive/automatic): ").lower() #interactive anything else is automatic
-        ai_level_query = input("AI Difficulty? (easy/medium/hard): ").lower() #medium for medium, hard for hard, anything else for easy
+    # ai_bool_query = input("AI? (on/off): ").lower()
+    # if ai_bool_query == 'on':
+    #     ai_type_query = input("Interactive or Automatic? (interactive/automatic): ").lower() #interactive anything else is automatic
+    #     ai_level_query = input("AI Difficulty? (easy/medium/hard): ").lower() #medium for medium, hard for hard, anything else for easy
         
-        match ai_type_query:
-            case 'interactive':
-                ai_mode = 'interactive'
-            case _:
-                ai_mode = 'automatic'
+    #     match ai_type_query:
+    #         case 'interactive':
+    #             ai_mode = 'interactive'
+    #         case _:
+    #             ai_mode = 'automatic'
         
-        match ai_level_query:
-            case 'hard':
-                ai_level = 'hard'
+    #     match ai_level_query:
+    #         case 'hard':
+    #             ai_level = 'hard'
 
-            case 'medium':
-                ai_level = 'medium'
+    #         case 'medium':
+    #             ai_level = 'medium'
 
-            case _:
-                ai_level = 'easy'
+    #         case _:
+    #             ai_level = 'easy'
     
-    else:
-        ai_mode = 'off'
+    # else:
+    #     ai_mode = 'off'
 
     screen = pygame.display.set_mode((BOARD_WIDTH, BOARD_HEIGHT))
     pygame.display.set_caption("Minesweeper")
