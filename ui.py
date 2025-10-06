@@ -1,6 +1,17 @@
-"""
-UI rendering functions for Minesweeper
-"""
+'''
+Module Name: ui.py
+Purpose: UI rendering functions for Minesweeper
+Input(s): None
+Output(s): None
+Original Author(s): Team 1
+Maintainer(s):  Jamie King
+                Jacob Kice
+                Gunther Luechtefeld
+                Joseph Hotze
+                Srihari Meyoor
+Outside Source(s):  None
+Updated Date: 10/05/2025
+'''
 import pygame
 from constants import *
 

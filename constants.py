@@ -1,6 +1,17 @@
-"""
-Constants for the Minesweeper game
-"""
+'''
+Module Name: constants.py
+Purpose: Constants for the Minesweeper game
+Input(s): None
+Output(s): None
+Original Author(s): Team 1
+Maintainer(s):  Jamie King
+                Jacob Kice
+                Gunther Luechtefeld
+                Joseph Hotze
+                Srihari Meyoor
+Outside Source(s):  None
+Updated Date: 10/05/2025
+'''
 
 # Display settings
 BOARD_WIDTH = 500
